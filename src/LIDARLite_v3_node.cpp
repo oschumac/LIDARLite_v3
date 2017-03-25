@@ -35,7 +35,7 @@ void ISRgetLIDAR(int gpio, int level, uint32_t tick, void* data)
 	LIDARdata* LIDAR1 = (LIDARdata*) data;
 
 	//ROSIMU->data.header.stamp = ros::Time::now();
-	std::cout << readLIDAR(LIDAR1.I2C_Handle_LIDAR) << std::endl;
+	std::cout << readLIDAR(LIDAR1->I2C_Handle_LIDAR) << std::endl;
 
 	//ROSIMU->pub.publish(ROSIMU->data);
 }
@@ -68,7 +68,7 @@ int32_t main(int argc, char *argv[])
 	LIDARdata LIDAR1;
 	
 	//Start LIDAR
-	int32_t LIDAR1.I2C_Handle_LIDAR = initLIDAR();
+	LIDAR1.I2C_Handle_LIDAR = initLIDAR();
 	if (LIDAR1.I2C_Handle_LIDAR < 0)
 	{
 		#ifdef DEBUG
@@ -89,12 +89,13 @@ int32_t main(int argc, char *argv[])
 
 
 	
-
+	triggerOneShotLIDAR(LIDAR1.I2C_Handle_LIDAR);
 	while (ros::ok())
 	{
 		ros::spinOnce();
 		gpioDelay(1000000);
 		triggerLIDAR(LIDAR1.I2C_Handle_LIDAR);
+		std::cout << "Trigger" << std::endl;
 	}
 
 	

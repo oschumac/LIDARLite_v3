@@ -6,7 +6,7 @@ int32_t initLIDAR()
 	if (I2C_Handle < 0)
 	{
 		#ifdef LIDARDEBUG
-		std::cout << "Failed to start I2C" << std::endl;
+		printf("Failed to start I2C\n");
 		#endif
 		return EXIT_FAILURE;
 	}
@@ -15,16 +15,16 @@ int32_t initLIDAR()
 	if (isValid < 0)
 	{
 		#ifdef LIDARDEBUG
-		std::cout << "Failed to reset" << std::endl;
+		printf("Failed to reset\n");
 		#endif
 		return EXIT_FAILURE;
 	}
 
-	isValid = configureLIDAR(int32_t I2C_Handle);
+	isValid = configureLIDAR(I2C_Handle);
 	if (isValid < 0)
 	{
 		#ifdef LIDARDEBUG
-		std::cout << "Failed to configure" << std::endl;
+		printf("Failed to configure\n");
 		#endif
 		return EXIT_FAILURE;
 	}
@@ -65,7 +65,7 @@ bool configureLIDAR(int32_t I2C_Handle)
 	//Balanced mode
 	i2cWriteByteData(I2C_Handle,SIG_COUNT_VAL, 0b10000000);
 	//Interrupt mode
-	i2cWriteByteData(I2C_Handle,ACQ_CONFIG_REG, 0b00101001);
+	i2cWriteByteData(I2C_Handle,ACQ_CONFIG_REG, 0b0101001);
 	i2cWriteByteData(I2C_Handle,THRESHOLD_BYPASS, 0b0);
 
 	gpioSleep(PI_TIME_RELATIVE, 0, LIDARSLEEPUS);
