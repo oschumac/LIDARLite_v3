@@ -66,6 +66,7 @@ bool configureLIDAR(int32_t I2C_Handle)
 	i2cWriteByteData(I2C_Handle,SIG_COUNT_VAL, 0b10000000);
 	//Interrupt mode
 	i2cWriteByteData(I2C_Handle,ACQ_CONFIG_REG, 0b0101001);
+
 	i2cWriteByteData(I2C_Handle,THRESHOLD_BYPASS, 0b0);
 
 	gpioSleep(PI_TIME_RELATIVE, 0, LIDARSLEEPUS);
@@ -99,19 +100,30 @@ bool ISRLIDAR(int32_t I2C_Handle, gpioISRFuncEx_t f,void* data)
 		return false;
 	}
 
-	
+	gpioSetPullUpDown(LIDARISRPIN, PI_PUD_DOWN);
+		
 	gpioSleep(PI_TIME_RELATIVE, 0, LIDARSLEEPUS);
 	return true;
+}
+
+void triggerOneShotECLIDAR(int32_t I2C_Handle)
+{
+	//Trigger 1 shot
+	//i2cWriteByteData(I2C_Handle,OUTER_LOOP_COUNT,0x01);
+
+	//Measurement with bias correction
+	i2cWriteByteData(I2C_Handle,ACQ_COMMAND,0x04);
 }
 
 void triggerOneShotLIDAR(int32_t I2C_Handle)
 {
 	//Trigger 1 shot
-	i2cWriteByteData(I2C_Handle,OUTER_LOOP_COUNT,0x01);
+	//i2cWriteByteData(I2C_Handle,OUTER_LOOP_COUNT,0x01);
 
 	//Measurement with bias correction
-	i2cWriteByteData(I2C_Handle,ACQ_COMMAND,0x04);
+	i2cWriteByteData(I2C_Handle,ACQ_COMMAND,0x03);
 }
+
 
 
 void triggerLIDAR(int32_t I2C_Handle)
@@ -129,4 +141,14 @@ uint16_t readLIDAR(int32_t I2C_Handle)
 	i2cReadI2CBlockData(I2C_Handle,LIDAR_VALUE,buf,2);
 	return (uint16_t)(  ((uint8_t)buf[0]) << 8 | ((uint8_t)buf[1]) );	
 }
+
+
+void pollLIDAR(int32_t I2C_Handle)
+{
+	while ((( (uint8_t)i2cReadByteData(I2C_Handle,STATUS)) & 0b1) == 1)
+	{
+		gpioDelay(10);
+	}
+}
+
 

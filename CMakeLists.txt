@@ -127,9 +127,17 @@ add_library(LIDARLite_v3
    ${PROJECT_SOURCE_DIR}/src/LIDARLite_v3.cpp
 )
 
-
+add_library(DRV8825
+   ${PROJECT_SOURCE_DIR}/src/DRV8825.cpp
+)
 
 target_link_libraries(LIDARLite_v3
+   pigpio
+   rt
+   ${catkin_LIBRARIES}
+ )
+
+target_link_libraries(DRV8825
    pigpio
    rt
    ${catkin_LIBRARIES}
@@ -138,10 +146,11 @@ target_link_libraries(LIDARLite_v3
 
 add_executable(LIDARLite_v3_node src/LIDARLite_v3_node.cpp)
 
-add_dependencies(LIDARLite_v3_node LIDARLite_v3 pigpio rt ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(LIDARLite_v3_node DRV8825 LIDARLite_v3 pigpio rt ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 target_link_libraries(LIDARLite_v3_node
+   DRV8825
    LIDARLite_v3
    pigpio
    rt

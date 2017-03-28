@@ -35,7 +35,7 @@
 #define MEASURE_DELAY 0x45
 #define OUTER_LOOP_COUNT 0x11
 #define LIDAR_VALUE 0x8f
-
+#define STATUS 0x01
 
 
 int32_t initLIDAR();
@@ -43,8 +43,8 @@ bool resetLIDAR(int32_t I2C_Handle);
 bool configureLIDAR(int32_t I2C_Handle);
 bool ISRLIDAR(int32_t I2C_Handle, gpioISRFuncEx_t f,void* data);
 void triggerOneShotLIDAR(int32_t I2C_Handle);
+void triggerOneShotECLIDAR(int32_t I2C_Handle);
 void triggerLIDAR(int32_t I2C_Handle);
 uint16_t readLIDAR(int32_t I2C_Handle);
-
-
+void pollLIDAR(int32_t I2C_Handle);
 
