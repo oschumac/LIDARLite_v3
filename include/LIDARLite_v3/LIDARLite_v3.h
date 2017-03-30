@@ -22,6 +22,11 @@
 #define SETGPIOISROK 0
 
 
+//LIDAR range
+#define LIDAR_RANGE_MIN 0.4
+#define LIDAR_RANGE_MAX 30.0
+
+
 //ISR
 #define LIDARISRPIN 4
 #define LIDARISRTYPE FALLING_EDGE 

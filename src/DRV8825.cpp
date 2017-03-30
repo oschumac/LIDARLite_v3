@@ -102,7 +102,10 @@ void stepDRV8825(DRV8825pin *data)
 		{
 			data->count = (REVSTEPS*(data->StepMode));
 		}
-		--data->count;
+		else
+		{
+			--data->count;
+		}
 	}
 }
 
