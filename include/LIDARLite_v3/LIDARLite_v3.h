@@ -27,6 +27,13 @@
 #define LIDAR_RANGE_MAX 30.0
 
 
+//LIDAR scale
+#define LIDAR_SCALE 0.01
+
+//LIDAR offset
+#define LIDAR_OFFSET 0.0
+
+
 //ISR
 #define LIDARISRPIN 4
 #define LIDARISRTYPE FALLING_EDGE 
@@ -50,6 +57,7 @@ bool ISRLIDAR(int32_t I2C_Handle, gpioISRFuncEx_t f,void* data);
 void triggerOneShotLIDAR(int32_t I2C_Handle);
 void triggerOneShotECLIDAR(int32_t I2C_Handle);
 void triggerLIDAR(int32_t I2C_Handle);
-uint16_t readLIDAR(int32_t I2C_Handle);
+float readLIDAR(int32_t I2C_Handle);
 void pollLIDAR(int32_t I2C_Handle);
+
 

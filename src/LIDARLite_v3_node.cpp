@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <math.h> 
 #include <fstream>
-
+#include <vector>
 
 
 #include <ros/ros.h>
@@ -73,13 +73,11 @@ int32_t main(int argc, char *argv[])
 
 	LIDARdata LIDAR1;
 	LIDAR1.pub = LIDAR_pub;
-
+	LIDAR1.LIDARdata.header.frame_id = "laser";
 	LIDAR1.LIDARdata.range_min = LIDAR_RANGE_MIN;
 	LIDAR1.LIDARdata.range_max = LIDAR_RANGE_MAX;	
 	LIDAR1.LIDARdata.angle_increment = (1.8/4.0);
 	LIDAR1.LIDARdata.angle_min = 0.0;
-	float32 ranges[800];
-	LIDAR1.LIDARdata.ranges = ranges;
 	
 	
 	//Start LIDAR
@@ -120,9 +118,9 @@ int32_t main(int argc, char *argv[])
 	setStepMode(&NEMA17,4);
 	dirDRV8825(&NEMA17, DRV8825_FORWARD);
 
-	float32 range = 0.0;
+	float range = 0.0;
 	double total_time = 0.0;
-	double dt;
+	double dt = 0.0;
 	ros::Time startScan,startTrigger;
 	while (ros::ok())
 	{
@@ -144,26 +142,40 @@ int32_t main(int argc, char *argv[])
 		
 		LIDAR1.LIDARdata.header.stamp = ros::Time::now();
 		 
-		range = (float32)readLIDAR(LIDAR1.I2C_Handle_LIDAR);
-		dt = (float32)((startTrigger - LIDAR1.LIDARdata.header.stamp).toSec());
-		if (((range < LIDAR_RANGE_MIN) || (range > LIDAR_RANGE_MAX)) || ( ((dt > 1.0) || (NEMA17.count == 799)) ) )
+		range = readLIDAR(LIDAR1.I2C_Handle_LIDAR);
+		dt = ((LIDAR1.LIDARdata.header.stamp - startTrigger).toSec());
+		if ((dt > 1.0) || (NEMA17.count == 799)) 
 		{
-			LIDAR1.LIDARdata.angle_max = LIDAR1.LIDARdata.angle_min + (NEMA17.count)*((2.0*M_PI)/(800.0));
-			LIDAR1.LIDARdata.time_increment = (float32)((total_time)/(((double)NEMA17.count) + 1.0));
-			LIDAR1.LIDARdata.scan_time = (float32)((startScan - LIDAR1.LIDARdata.header.stamp).toSec());
+			if (LIDAR1.LIDARdata.ranges.size() > 0)
+			{
+				LIDAR1.LIDARdata.angle_max = LIDAR1.LIDARdata.angle_min + ((((float)NEMA17.count) + 1.0)*((2.0*M_PI)/(800.0)));
+				LIDAR1.LIDARdata.time_increment = (float)((total_time)/(((double)NEMA17.count) + 1.0));
+				LIDAR1.LIDARdata.scan_time = (float)((LIDAR1.LIDARdata.header.stamp - startScan).toSec());
+				LIDAR1.pub.publish(LIDAR1.LIDARdata);
+			}
 			
-			LIDAR1.pub.publish(LIDAR1.LIDARdata);
-			LIDAR1.LIDARdata.angle_min = (NEMA17.count % 800 )*((2.0*PI)/(800.0)) ;
-			LIDAR1.I2C_Handle_LIDAR = initLIDAR();
+			if (NEMA17.count == 799)
+			{
+				LIDAR1.I2C_Handle_LIDAR = initLIDAR();
+				dirDRV8825(&NEMA17, DRV8825_BACKWARD);
+				gpioDelay(1000);
+				while ( NEMA17.count > 0 )
+				{
+					stepDRV8825(&NEMA17);
+					gpioDelay(1000);
+				}
+				dirDRV8825(&NEMA17, DRV8825_FORWARD);
+				gpioDelay(1000);
+			}
+			
+			LIDAR1.LIDARdata.ranges.clear();
+			LIDAR1.LIDARdata.angle_min = (NEMA17.count % 800 )*((2.0*M_PI)/(800.0));
 			total_time = 0.0;
 			continue;
 		}
-	
-		stepDRV8825(&NEMA17);	
+		stepDRV8825(&NEMA17);
 		total_time += dt;
-		LIDAR1.LIDARdata.ranges[NEMA17.count] = range;
-		
-		
+		LIDAR1.LIDARdata.ranges.push_back(range);
 	}
 
 	

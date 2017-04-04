@@ -92,7 +92,7 @@ void stepDRV8825(DRV8825pin *data)
 	gpioWrite(data->STEP, 0);
 	gpioDelay(STEPUS);
 	
-	if (data->forward)
+	if (data->forward == DRV8825_FORWARD)
 	{
 		data->count = (data->count + 1) % (REVSTEPS*(data->StepMode));
 	}
@@ -111,17 +111,8 @@ void stepDRV8825(DRV8825pin *data)
 
 void dirDRV8825(DRV8825pin *data, bool direction)
 {
-	if (direction == DRV8825_FORWARD)
-	{
-		gpioWrite(data->_DIR, 0);
-		data->forward = true;
-		return;
-	}
-	else
-	{
-		data->forward = false;
-		gpioWrite(data->_DIR, 1);
-	}
+	gpioWrite(data->_DIR, direction);
+	data->forward = (bool)direction;
 }
 
 
