@@ -57,7 +57,7 @@ bool ISRLIDAR(int32_t I2C_Handle, gpioISRFuncEx_t f,void* data);
 void triggerOneShotLIDAR(int32_t I2C_Handle);
 void triggerOneShotECLIDAR(int32_t I2C_Handle);
 void triggerLIDAR(int32_t I2C_Handle);
-float readLIDAR(int32_t I2C_Handle);
+double readLIDAR(int32_t I2C_Handle);
 void pollLIDAR(int32_t I2C_Handle);
 
 

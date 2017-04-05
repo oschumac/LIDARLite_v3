@@ -12,22 +12,21 @@
 #include <math.h> 
 #include <fstream>
 #include <vector>
-
+#include <string.h>
 
 #include <ros/ros.h>
 
 #define DEBUG 1
 
-#include <sensor_msgs/LaserScan.h>
 #include <std_msgs/Float32.h>
-
+#include <sensor_msgs/PointCloud2.h>
 #include "include/LIDARLite_v3/LIDARLite_v3.h"
 #include "include/LIDARLite_v3/DRV8825.h"
 
 typedef struct LIDARdata
 {
 	ros::Publisher pub;
-	sensor_msgs::LaserScan LIDARdata;
+	sensor_msgs::PointCloud2 LIDARdata;
 	uint16_t value;
 	int32_t I2C_Handle_LIDAR;
 } LIDARdata;
@@ -53,7 +52,7 @@ int32_t main(int argc, char *argv[])
 	//Setup ROS
 	ros::init(argc, argv, "LIDARLite_v3");
 	ros::NodeHandle node;
-	ros::Publisher LIDAR_pub = node.advertise<sensor_msgs::LaserScan>("scan", 500);
+	ros::Publisher LIDAR_pub = node.advertise<sensor_msgs::PointCloud2>("cloud", 500);
 	//ros::Subscriber sub = node.subscribe("LIDAR_command", 1000, IMU_commandCallback);
 	ros::Rate loop_rate(500);
 
@@ -73,12 +72,33 @@ int32_t main(int argc, char *argv[])
 
 	LIDARdata LIDAR1;
 	LIDAR1.pub = LIDAR_pub;
-	LIDAR1.LIDARdata.header.frame_id = "laser";
-	LIDAR1.LIDARdata.range_min = LIDAR_RANGE_MIN;
-	LIDAR1.LIDARdata.range_max = LIDAR_RANGE_MAX;	
-	LIDAR1.LIDARdata.angle_increment = (1.8/4.0);
-	LIDAR1.LIDARdata.angle_min = 0.0;
+	LIDAR1.LIDARdata.header.frame_id = "base_link";
+	LIDAR1.LIDARdata.width  = 800;
+	LIDAR1.LIDARdata.height = 1;
+	LIDAR1.LIDARdata.fields.resize(3);
 	
+
+	LIDAR1.LIDARdata.fields[0].name = "x";
+	LIDAR1.LIDARdata.fields[1].name = "y";
+	LIDAR1.LIDARdata.fields[2].name = "z";
+
+	uint32_t offset = 0;
+	size_t index;
+	for (index = 0; index < LIDAR1.LIDARdata.fields.size(); ++index, offset += 4)
+	{
+		LIDAR1.LIDARdata.fields[index].count    = LIDAR1.LIDARdata.width;
+		LIDAR1.LIDARdata.fields[index].offset   = offset;
+		LIDAR1.LIDARdata.fields[index].datatype = sensor_msgs::PointField::FLOAT32;
+	}
+	size_t x_data_offset = LIDAR1.LIDARdata.fields[0].offset ;
+	size_t y_data_offset = LIDAR1.LIDARdata.fields[1].offset ;
+
+	LIDAR1.LIDARdata.point_step = offset;
+	LIDAR1.LIDARdata.row_step = LIDAR1.LIDARdata.point_step * LIDAR1.LIDARdata.width;
+	LIDAR1.LIDARdata.data.resize( LIDAR1.LIDARdata.row_step);
+	std::fill(LIDAR1.LIDARdata.data.begin(), LIDAR1.LIDARdata.data.end(), 0);
+	LIDAR1.LIDARdata.is_bigendian = false;
+	LIDAR1.LIDARdata.is_dense = true;
 	
 	//Start LIDAR
 	LIDAR1.I2C_Handle_LIDAR = initLIDAR();
@@ -118,64 +138,46 @@ int32_t main(int argc, char *argv[])
 	setStepMode(&NEMA17,4);
 	dirDRV8825(&NEMA17, DRV8825_FORWARD);
 
-	float range = 0.0;
-	double total_time = 0.0;
-	double dt = 0.0;
-	ros::Time startScan,startTrigger;
+	double radius,theta;
+	float pos_x,pos_y;
 	while (ros::ok())
 	{
-		startTrigger = ros::Time::now();
-		if (NEMA17.count == 0)
+		index = 0;
+		LIDAR1.LIDARdata.header.stamp = ros::Time::now();
+		while (NEMA17.count < 800)
 		{
-			startScan = startTrigger;
+			if ((NEMA17.count % 100) == 0)
+			{
+				triggerOneShotECLIDAR(LIDAR1.I2C_Handle_LIDAR);
+			}
+			else
+			{
+				triggerOneShotLIDAR(LIDAR1.I2C_Handle_LIDAR);
+			}
+			pollLIDAR(LIDAR1.I2C_Handle_LIDAR);
+		 
+			radius = readLIDAR(LIDAR1.I2C_Handle_LIDAR);
+			
+			stepDRV8825(&NEMA17);
+			theta = ((double)NEMA17.count)*((2.0*M_PI)/800.0);
+			pos_x = (float)(radius*cos(theta));
+			pos_y = (float)(radius*sin(theta));
+			memcpy(&LIDAR1.LIDARdata.data[index * LIDAR1.LIDARdata.point_step + x_data_offset], &pos_x, sizeof(float));
+			memcpy(&LIDAR1.LIDARdata.data[index * LIDAR1.LIDARdata.point_step + y_data_offset], &pos_y, sizeof(float));
+			++index;
 		}
 
-		if ((NEMA17.count % 100) == 0)
+
+		LIDAR1.I2C_Handle_LIDAR = initLIDAR();
+		dirDRV8825(&NEMA17, DRV8825_BACKWARD);
+		gpioDelay(1000);
+		while ( NEMA17.count > 0 )
 		{
-			triggerOneShotECLIDAR(LIDAR1.I2C_Handle_LIDAR);
+			stepDRV8825(&NEMA17);
+			gpioDelay(1000);
 		}
-		else
-		{
-			triggerOneShotLIDAR(LIDAR1.I2C_Handle_LIDAR);
-		}
-		pollLIDAR(LIDAR1.I2C_Handle_LIDAR);
-		
-		LIDAR1.LIDARdata.header.stamp = ros::Time::now();
-		 
-		range = readLIDAR(LIDAR1.I2C_Handle_LIDAR);
-		dt = ((LIDAR1.LIDARdata.header.stamp - startTrigger).toSec());
-		if ((dt > 1.0) || (NEMA17.count == 799)) 
-		{
-			if (LIDAR1.LIDARdata.ranges.size() > 0)
-			{
-				LIDAR1.LIDARdata.angle_max = LIDAR1.LIDARdata.angle_min + ((((float)NEMA17.count) + 1.0)*((2.0*M_PI)/(800.0)));
-				LIDAR1.LIDARdata.time_increment = (float)((total_time)/(((double)NEMA17.count) + 1.0));
-				LIDAR1.LIDARdata.scan_time = (float)((LIDAR1.LIDARdata.header.stamp - startScan).toSec());
-				LIDAR1.pub.publish(LIDAR1.LIDARdata);
-			}
-			
-			if (NEMA17.count == 799)
-			{
-				LIDAR1.I2C_Handle_LIDAR = initLIDAR();
-				dirDRV8825(&NEMA17, DRV8825_BACKWARD);
-				gpioDelay(1000);
-				while ( NEMA17.count > 0 )
-				{
-					stepDRV8825(&NEMA17);
-					gpioDelay(1000);
-				}
-				dirDRV8825(&NEMA17, DRV8825_FORWARD);
-				gpioDelay(1000);
-			}
-			
-			LIDAR1.LIDARdata.ranges.clear();
-			LIDAR1.LIDARdata.angle_min = (NEMA17.count % 800 )*((2.0*M_PI)/(800.0));
-			total_time = 0.0;
-			continue;
-		}
-		stepDRV8825(&NEMA17);
-		total_time += dt;
-		LIDAR1.LIDARdata.ranges.push_back(range);
+		dirDRV8825(&NEMA17, DRV8825_FORWARD);
+		gpioDelay(1000);
 	}
 
 	

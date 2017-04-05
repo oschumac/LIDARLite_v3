@@ -137,11 +137,11 @@ void triggerLIDAR(int32_t I2C_Handle)
 	i2cWriteByteData(I2C_Handle,ACQ_COMMAND,0x03);
 }
 
-float readLIDAR(int32_t I2C_Handle)
+double readLIDAR(int32_t I2C_Handle)
 {
 	char buf[2];
 	i2cReadI2CBlockData(I2C_Handle,LIDAR_VALUE,buf,2);
-	return (((float)((uint16_t)(  ((uint8_t)buf[0]) << 8 | ((uint8_t)buf[1]) )))*(LIDAR_SCALE)) - LIDAR_OFFSET ;
+	return (((double)((uint16_t)(  ((uint8_t)buf[0]) << 8 | ((uint8_t)buf[1]) )))*(LIDAR_SCALE)) - LIDAR_OFFSET ;
 }
 
 
