@@ -86,7 +86,7 @@ int32_t main(int argc, char *argv[])
 	size_t index;
 	for (index = 0; index < LIDAR1.LIDARdata.fields.size(); ++index, offset += 4)
 	{
-		LIDAR1.LIDARdata.fields[index].count    = LIDAR1.LIDARdata.width;
+		LIDAR1.LIDARdata.fields[index].count    = 1;
 		LIDAR1.LIDARdata.fields[index].offset   = offset;
 		LIDAR1.LIDARdata.fields[index].datatype = sensor_msgs::PointField::FLOAT32;
 	}
@@ -144,7 +144,7 @@ int32_t main(int argc, char *argv[])
 	{
 		index = 0;
 		LIDAR1.LIDARdata.header.stamp = ros::Time::now();
-		while (NEMA17.count < 800)
+		while (index < 800)
 		{
 			if ((NEMA17.count % 100) == 0)
 			{
@@ -157,22 +157,27 @@ int32_t main(int argc, char *argv[])
 			pollLIDAR(LIDAR1.I2C_Handle_LIDAR);
 		 
 			radius = readLIDAR(LIDAR1.I2C_Handle_LIDAR);
+			theta = ((double)NEMA17.count)*((2.0*M_PI)/800.0);
+			//std::cout << "NEMA" << NEMA17.count << std::endl;
 			
 			stepDRV8825(&NEMA17);
-			theta = ((double)NEMA17.count)*((2.0*M_PI)/800.0);
 			pos_x = (float)(radius*cos(theta));
 			pos_y = (float)(radius*sin(theta));
 			memcpy(&LIDAR1.LIDARdata.data[index * LIDAR1.LIDARdata.point_step + x_data_offset], &pos_x, sizeof(float));
 			memcpy(&LIDAR1.LIDARdata.data[index * LIDAR1.LIDARdata.point_step + y_data_offset], &pos_y, sizeof(float));
+			//std::cout <<  "index" << index << std::endl;
 			++index;
 		}
-
-
+		
+		NEMA17.count = 800;	
+		std::cout << "NEMA" << NEMA17.count << std::endl;	
 		LIDAR1.I2C_Handle_LIDAR = initLIDAR();
+		LIDAR1.pub.publish(LIDAR1.LIDARdata);
 		dirDRV8825(&NEMA17, DRV8825_BACKWARD);
 		gpioDelay(1000);
 		while ( NEMA17.count > 0 )
 		{
+			//std::cout << "NEMA" << NEMA17.count << std::endl;
 			stepDRV8825(&NEMA17);
 			gpioDelay(1000);
 		}
