@@ -13,7 +13,6 @@
 #include <fstream>
 #include <vector>
 
-
 #include <ros/ros.h>
 
 #define DEBUG 1
@@ -57,6 +56,7 @@ int32_t main(int argc, char *argv[])
 	//ros::Subscriber sub = node.subscribe("LIDAR_command", 1000, IMU_commandCallback);
 	ros::Rate loop_rate(500);
 
+
 	#ifdef DEBUG
 	std::cout << "Starting" << std::endl;
 	#endif
@@ -73,11 +73,11 @@ int32_t main(int argc, char *argv[])
 
 	LIDARdata LIDAR1;
 	LIDAR1.pub = LIDAR_pub;
-	LIDAR1.LIDARdata.header.frame_id = "base_link";
+	LIDAR1.LIDARdata.header.frame_id = "laser";
 	LIDAR1.LIDARdata.range_min = LIDAR_RANGE_MIN;
 	LIDAR1.LIDARdata.range_max = LIDAR_RANGE_MAX;	
-	LIDAR1.LIDARdata.angle_increment = (1.8/4.0);
-	LIDAR1.LIDARdata.angle_min = 0.0;
+	LIDAR1.LIDARdata.angle_increment = (1.8/4.0)*(M_PI/180);
+	LIDAR1.LIDARdata.angle_min = - M_PI;
 	
 	
 	//Start LIDAR
@@ -120,7 +120,7 @@ int32_t main(int argc, char *argv[])
 
 	float range = 0.0;
 	double dt = 0.0;
-	ros::Time startScan,startTrigger;
+	ros::Time startScan,startTrigger,endTrigger;
 	while (ros::ok())
 	{
 		startTrigger = ros::Time::now();
@@ -139,16 +139,22 @@ int32_t main(int argc, char *argv[])
 		}
 		pollLIDAR(LIDAR1.I2C_Handle_LIDAR);
 		
-		LIDAR1.LIDARdata.header.stamp = ros::Time::now();
+		endTrigger = ros::Time::now();
 		 
 		range = readLIDAR(LIDAR1.I2C_Handle_LIDAR);
-		dt = ((LIDAR1.LIDARdata.header.stamp - startTrigger).toSec());
+		dt = ((endTrigger - startTrigger).toSec());
 		if ((dt > 1.0) || (NEMA17.count == 799)) 
 		{
+			if (NEMA17.count == 799)
+			{
+				LIDAR1.LIDARdata.ranges.push_back(range);
+			}
+			
 			if (LIDAR1.LIDARdata.ranges.size() > 0)
 			{
-				LIDAR1.LIDARdata.angle_max = LIDAR1.LIDARdata.angle_min + ((((float)NEMA17.count) + 1.0)*((2.0*M_PI)/(800.0)));
-				LIDAR1.LIDARdata.scan_time = (float)((LIDAR1.LIDARdata.header.stamp - startScan).toSec());
+				LIDAR1.LIDARdata.header.stamp = startScan;
+				LIDAR1.LIDARdata.angle_max = LIDAR1.LIDARdata.angle_min + ((((float)NEMA17.count) + 1.0)*((2.0*M_PI)/(800.0))) ;
+				LIDAR1.LIDARdata.scan_time = (float)((endTrigger - startScan).toSec());
 				LIDAR1.LIDARdata.time_increment = (float)((LIDAR1.LIDARdata.scan_time)/(((double)NEMA17.count) + 1.0));
 				LIDAR1.pub.publish(LIDAR1.LIDARdata);
 			}
@@ -168,7 +174,7 @@ int32_t main(int argc, char *argv[])
 			}
 			
 			LIDAR1.LIDARdata.ranges.clear();
-			LIDAR1.LIDARdata.angle_min = (NEMA17.count % 800 )*((2.0*M_PI)/(800.0));
+			LIDAR1.LIDARdata.angle_min = (NEMA17.count % 800 )*((2.0*M_PI)/(800.0)) - M_PI;
 			continue;
 		}
 		stepDRV8825(&NEMA17);
