@@ -16,6 +16,9 @@
 #define DRV8825_BACKWARD 1
 #define REVSTEPS 200
 
+//Default step in rads
+#define DEFAULT_STEP_ANGLE 0.031415926535897934
+
 typedef struct DRV8825pin
 {
 	uint32_t _DIR;
@@ -24,8 +27,10 @@ typedef struct DRV8825pin
 	uint32_t M1;
 	uint32_t M2;
 	uint8_t StepMode;
-	uint32_t count;
+	int32_t count;
+	float current_angle;
 	bool forward;
+	float angle_increment;
 } DRV8825pin;
 
 

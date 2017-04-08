@@ -53,8 +53,10 @@ bool resetDRV8825(DRV8825pin *data)
 	gpioWrite(data->STEP, 0);
 	gpioWrite(data->_DIR, 0);	
 	data->StepMode = 1;
+	data->current_angle = -M_PI;
 	data->count = 0;
 	data->forward = true;
+	data->angle_increment = DEFAULT_STEP_ANGLE;
 	
 	return true;	
 }
@@ -68,6 +70,7 @@ void setStepMode(DRV8825pin *data,uint8_t StepMode)
 			gpioWrite(data->M1, 0);
 			gpioWrite(data->M2, 0);
 			data->StepMode = 2;
+			data->angle_increment
 			break;
 		case 4:	
 			gpioWrite(data->M0, 0);
@@ -82,6 +85,7 @@ void setStepMode(DRV8825pin *data,uint8_t StepMode)
 			data->StepMode = 1;
 			break; 
 	}
+	data->angle_increment = (float)(DEFAULT_STEP_ANGLE/((float)data->StepMode));
 }
 
 
@@ -94,18 +98,25 @@ void stepDRV8825(DRV8825pin *data)
 	
 	if (data->forward == DRV8825_FORWARD)
 	{
-		data->count = (data->count + 1) % (REVSTEPS*(data->StepMode));
+		++data->count;
+		data->current_angle += data->angle_increment;
+		/*
+		if (data->current_angle > M_PI)
+		{
+			data->current_angle = (data->current_angle - (2.0*M_PI))
+		}
+		*/
 	}
 	else
 	{
-		if (data->count == 0)
+		--data->count;
+		data->current_angle -= data->angle_increment;
+		/*
+		if (data->current_angle < -M_PI)
 		{
-			data->count = (REVSTEPS*(data->StepMode));
+			data->current_angle = (data->current_angle + (2.0*M_PI))
 		}
-		else
-		{
-			--data->count;
-		}
+		*/
 	}
 }
 
