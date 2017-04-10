@@ -70,7 +70,6 @@ void setStepMode(DRV8825pin *data,uint8_t StepMode)
 			gpioWrite(data->M1, 0);
 			gpioWrite(data->M2, 0);
 			data->StepMode = 2;
-			data->angle_increment
 			break;
 		case 4:	
 			gpioWrite(data->M0, 0);
@@ -86,6 +85,7 @@ void setStepMode(DRV8825pin *data,uint8_t StepMode)
 			break; 
 	}
 	data->angle_increment = (float)(DEFAULT_STEP_ANGLE/((float)data->StepMode));
+	data->stepsPerCycle = (REVSTEPS)*(data->StepMode);
 }
 
 

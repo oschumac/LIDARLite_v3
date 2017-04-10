@@ -31,6 +31,7 @@ typedef struct DRV8825pin
 	float current_angle;
 	bool forward;
 	float angle_increment;
+	int32_t stepsPerCycle;
 } DRV8825pin;
 
 
