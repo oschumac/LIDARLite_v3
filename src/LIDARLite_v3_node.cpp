@@ -73,14 +73,22 @@ int32_t main(int argc, char *argv[])
 	setStepMode(&NEMA17,1);
 	dirDRV8825(&NEMA17, DRV8825_FORWARD);
 
-	
+	//Setup data
 	sensor_msgs::LaserScan LIDARdata;
 	LIDARdata.header.frame_id = "laser";
 	LIDARdata.range_min = LIDAR_RANGE_MIN;
 	LIDARdata.range_max = LIDAR_RANGE_MAX;
 	LIDARdata.angle_increment = NEMA17.angle_increment;
 	LIDARdata.angle_min = NEMA17.current_angle;
+	LIDARdata.angle_max = M_PI - NEMA17.angle_increment;
 	float stepsPerCycle = (float)NEMA17.stepsPerCycle;
+	LIDARdata.reserve(NEMA17.stepsPerCycle);
+	int32_t i;
+	for (i=0;i<NEMA17.stepsPerCycle;++i)
+	{
+		LIDARdata.ranges.push_back(0.0);
+	}
+
 
 	float range = 0.0;
 	ros::Time startScan,endScan;
@@ -90,6 +98,7 @@ int32_t main(int argc, char *argv[])
 		startScan = ros::Time::now();
 		while (NEMA17.current_angle < M_PI)
 		{
+			//Start LIDAR
 			if ((NEMA17.count % 100) == 0)
 			{
 				triggerOneShotECLIDAR(I2C_Handle_LIDAR);
@@ -98,66 +107,25 @@ int32_t main(int argc, char *argv[])
 			{
 				triggerOneShotLIDAR(I2C_Handle_LIDAR);
 			}
+			//Wait for LIDAR
 			pollLIDAR(I2C_Handle_LIDAR);
+			//Get LIDAR range
 			range = readLIDAR(I2C_Handle_LIDAR);
 			//std::cout << "c: " << NEMA17.count << " a:" << NEMA17.current_angle << " r:" << range << std::endl;
+			//Rotate
 			stepDRV8825(&NEMA17);
-			LIDARdata.ranges.push_back(range);
+			//Save data
+			LIDARdata.ranges[NEMA17.count-1]  = range;
 			//std::cout << "c: " << NEMA17.count << " a:" << NEMA17.current_angle << std::endl;
 		}
 		endScan = ros::Time::now();
+		//Calculate data
 		LIDARdata.header.stamp = startScan;
-		LIDARdata.angle_max = NEMA17.current_angle - NEMA17.angle_increment;
-		LIDARdata.scan_time = (float)((endScan - startScan).toSec());
-		LIDARdata.time_increment = (float)((LIDARdata.scan_time)/(stepsPerCycle));
-		LaserScan_pub.publish(LIDARdata);
-		
-		NEMA17.current_angle = M_PI;
-		LIDARdata.ranges.clear();
-		//LIDARdata.angle_min = NEMA17.current_angle;
-		LIDARdata.angle_max = (NEMA17.current_angle);
-
-		dirDRV8825(&NEMA17, DRV8825_BACKWARD);
-		gpioDelay(1000);
-		
-		
-		
-		
-		//std::cout << "c: " << NEMA17.count << " a:" << NEMA17.current_angle << std::endl;
-		startScan = ros::Time::now();
-		while (NEMA17.current_angle > -M_PI)
-		{
-			if ((NEMA17.count % 100) == 0)
-			{
-				triggerOneShotECLIDAR(I2C_Handle_LIDAR);
-			}
-			else
-			{
-				triggerOneShotLIDAR(I2C_Handle_LIDAR);
-			}
-			pollLIDAR(I2C_Handle_LIDAR);
-			range = readLIDAR(I2C_Handle_LIDAR);
-			//std::cout << "c: " << NEMA17.count << " a:" << NEMA17.current_angle << " r:" << range << std::endl;
-			stepDRV8825(&NEMA17);
-			LIDARdata.ranges.insert(LIDARdata.ranges.begin(),range);
-			//LIDARdata.ranges.push_back(range);
-			//std::cout << "c: " << NEMA17.count << " a:" << NEMA17.current_angle << std::endl;
-		}
-		endScan = ros::Time::now();
-		LIDARdata.header.stamp = startScan;
-		//LIDARdata.angle_max = NEMA17.current_angle + NEMA17.angle_increment;
-		LIDARdata.angle_min = (NEMA17.current_angle + NEMA17.angle_increment);
 		LIDARdata.scan_time = (float)((endScan - startScan).toSec());
 		LIDARdata.time_increment = (float)((LIDARdata.scan_time)/(stepsPerCycle));
 		LaserScan_pub.publish(LIDARdata);
 		
 		NEMA17.current_angle = -M_PI;
-		LIDARdata.ranges.clear();
-		LIDARdata.angle_min = NEMA17.current_angle;
-
-	
-		dirDRV8825(&NEMA17, DRV8825_FORWARD);
-		gpioDelay(1000);
 	}
 
 	
