@@ -82,14 +82,11 @@ int32_t main(int argc, char *argv[])
 	LIDARdata.angle_min = NEMA17.current_angle;
 	LIDARdata.angle_max = M_PI - NEMA17.angle_increment;
 	float stepsPerCycle = (float)NEMA17.stepsPerCycle;
-	LIDARdata.reserve(NEMA17.stepsPerCycle);
-	int32_t i;
-	for (i=0;i<NEMA17.stepsPerCycle;++i)
-	{
-		LIDARdata.ranges.push_back(0.0);
-	}
+	LIDARdata.ranges.resize(NEMA17.stepsPerCycle);
+	float rangeArray[NEMA17.stepsPerCycle];
+	int32_t i;	
 
-
+	std::cout << "step: " << NEMA17.stepsPerCycle << std::endl;
 	float range = 0.0;
 	ros::Time startScan,endScan;
 	while (ros::ok())
@@ -115,7 +112,8 @@ int32_t main(int argc, char *argv[])
 			//Rotate
 			stepDRV8825(&NEMA17);
 			//Save data
-			LIDARdata.ranges[NEMA17.count-1]  = range;
+			rangeArray[NEMA17.count-1]  = range;
+			//LIDARdata.ranges.push_back(range);
 			//std::cout << "c: " << NEMA17.count << " a:" << NEMA17.current_angle << std::endl;
 		}
 		endScan = ros::Time::now();
@@ -123,9 +121,14 @@ int32_t main(int argc, char *argv[])
 		LIDARdata.header.stamp = startScan;
 		LIDARdata.scan_time = (float)((endScan - startScan).toSec());
 		LIDARdata.time_increment = (float)((LIDARdata.scan_time)/(stepsPerCycle));
+		for (i=0;i<NEMA17.stepsPerCycle;++i)
+		{
+			LIDARdata.ranges[i] = rangeArray[i];
+		}
 		LaserScan_pub.publish(LIDARdata);
-		
+
 		NEMA17.current_angle = -M_PI;
+		NEMA17.count = 0;
 	}
 
 	

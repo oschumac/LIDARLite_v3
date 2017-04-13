@@ -12,8 +12,8 @@
 //Debug print out
 #define DRV8825DEBUG 1
 #define STEPUS 50
-#define DRV8825_FORWARD 0
-#define DRV8825_BACKWARD 1
+#define DRV8825_FORWARD 1
+#define DRV8825_BACKWARD 0
 #define REVSTEPS 200
 
 //Default step in rads
