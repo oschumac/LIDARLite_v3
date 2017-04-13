@@ -2,7 +2,7 @@
 
 
 
-bool initDRV8825(DRV8825pin *data,uint32_t _DIR,uint32_t STEP,uint32_t M0,uint32_t M1,uint32_t M2)
+bool initDRV8825(DRV8825pin *data, uint32_t _EN, uint32_t _DIR,uint32_t STEP,uint32_t M0,uint32_t M1,uint32_t M2)
 {
 	int32_t isValid = gpioSetMode(_DIR,PI_OUTPUT);
 	if (isValid < 0)
@@ -13,17 +13,20 @@ bool initDRV8825(DRV8825pin *data,uint32_t _DIR,uint32_t STEP,uint32_t M0,uint32
 		return false;
 	}
 	
+	gpioSetMode(_EN,PI_OUTPUT);
 	gpioSetMode(STEP,PI_OUTPUT);
 	gpioSetMode(M0,PI_OUTPUT);
 	gpioSetMode(M1,PI_OUTPUT);
 	gpioSetMode(M2,PI_OUTPUT);
 
-	
+	data->_EN = _EN;
 	data->_DIR = _DIR;
 	data->STEP = STEP;
 	data->M0 = M0;
 	data->M1 = M1;
 	data->M2 = M2;
+
+	disableDRV8825(data);
 
 	bool isCorrect = resetDRV8825(data);
 	if (isCorrect == false)
@@ -34,7 +37,8 @@ bool initDRV8825(DRV8825pin *data,uint32_t _DIR,uint32_t STEP,uint32_t M0,uint32
 		return false;
 	}
 	
-
+	enableDRV8825(data);
+	
 	return true;
 }
 
@@ -100,23 +104,11 @@ void stepDRV8825(DRV8825pin *data)
 	{
 		++data->count;
 		data->current_angle += data->angle_increment;
-		/*
-		if (data->current_angle > M_PI)
-		{
-			data->current_angle = (data->current_angle - (2.0*M_PI))
-		}
-		*/
 	}
 	else
 	{
 		--data->count;
 		data->current_angle -= data->angle_increment;
-		/*
-		if (data->current_angle < -M_PI)
-		{
-			data->current_angle = (data->current_angle + (2.0*M_PI))
-		}
-		*/
 	}
 }
 
@@ -124,6 +116,20 @@ void dirDRV8825(DRV8825pin *data, bool direction)
 {
 	gpioWrite(data->_DIR, direction);
 	data->forward = (bool)direction;
+}
+
+
+void enableDRV8825(DRV8825pin *data)
+{
+	gpioWrite(data->_EN, ENABLE_DRV8825);
+	gpioDelay(STEPUS);
+}
+
+
+void disableDRV8825(DRV8825pin *data)
+{
+	gpioWrite(data->_EN, DISABLE_DRV8825);
+	gpioDelay(STEPUS);
 }
 
 

@@ -19,8 +19,15 @@
 //Default step in rads
 #define DEFAULT_STEP_ANGLE 0.031415926535897934
 
+
+//Enable
+#define ENABLE_DRV8825 0
+#define DISABLE_DRV8825 1
+
+
 typedef struct DRV8825pin
 {
+	uint32_t _EN;
 	uint32_t _DIR;
 	uint32_t STEP;
 	uint32_t M0;
@@ -36,7 +43,7 @@ typedef struct DRV8825pin
 
 
 
-bool initDRV8825(DRV8825pin *data,  uint32_t _DIR,uint32_t STEP,uint32_t M0,uint32_t M1,uint32_t M2);
+bool initDRV8825(DRV8825pin *data, uint32_t _EN, uint32_t _DIR,uint32_t STEP,uint32_t M0,uint32_t M1,uint32_t M2);
 
 bool resetDRV8825(DRV8825pin *data);
 
@@ -45,3 +52,8 @@ void setStepMode(DRV8825pin *data,uint8_t StepMode);
 void stepDRV8825(DRV8825pin *data);
 
 void dirDRV8825(DRV8825pin *data, bool direction);
+
+void enableDRV8825(DRV8825pin *data);
+
+void disableDRV8825(DRV8825pin *data);
+

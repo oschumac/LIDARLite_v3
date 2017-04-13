@@ -62,7 +62,7 @@ int32_t main(int argc, char *argv[])
 
 	//Stepper motor
 	DRV8825pin NEMA17;
-	bool isValid = initDRV8825(&NEMA17, 27, 22,10,9,11);
+	bool isValid = initDRV8825(&NEMA17, 17,27, 22,10,9,11);
 	if (isValid == false)
 	{
 		#ifdef DEBUG
@@ -131,7 +131,7 @@ int32_t main(int argc, char *argv[])
 		NEMA17.count = 0;
 	}
 
-	
+	disableDRV8825(&NEMA17);	
    	gpioTerminate();
 
 
