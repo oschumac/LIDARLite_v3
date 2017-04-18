@@ -62,7 +62,7 @@ int32_t main(int argc, char *argv[])
 
 	//Stepper motor
 	DRV8825pin NEMA17;
-	bool isValid = initDRV8825(&NEMA17, 17,27, 22,10,9,11);
+	bool isValid = initDRV8825(&NEMA17, 17,27, 22,11,9,10);
 	if (isValid == false)
 	{
 		#ifdef DEBUG
@@ -84,7 +84,7 @@ int32_t main(int argc, char *argv[])
 	float stepsPerCycle = (float)NEMA17.stepsPerCycle;
 	LIDARdata.ranges.resize(NEMA17.stepsPerCycle);
 	float rangeArray[NEMA17.stepsPerCycle];
-	int32_t i;	
+	int32_t i;
 
 	std::cout << "step: " << NEMA17.stepsPerCycle << std::endl;
 	float range = 0.0;

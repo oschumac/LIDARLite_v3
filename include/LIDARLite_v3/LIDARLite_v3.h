@@ -31,7 +31,7 @@
 #define LIDAR_SCALE 0.01
 
 //LIDAR offset
-#define LIDAR_OFFSET 0.0
+#define LIDAR_OFFSET 0.11
 
 
 //ISR
