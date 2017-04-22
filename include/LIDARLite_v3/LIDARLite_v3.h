@@ -23,8 +23,8 @@
 
 
 //LIDAR range
-#define LIDAR_RANGE_MIN 0.4
-#define LIDAR_RANGE_MAX 30.0
+#define LIDAR_RANGE_MIN 1.5
+#define LIDAR_RANGE_MAX 35.0
 
 
 //LIDAR scale
