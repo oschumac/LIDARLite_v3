@@ -63,13 +63,15 @@ bool configureLIDAR(int32_t I2C_Handle)
 	}
 	
 	//Balanced mode
-	i2cWriteByteData(I2C_Handle,SIG_COUNT_VAL, 0b10000000);
-	//Interrupt mode
-	//i2cWriteByteData(I2C_Handle,ACQ_CONFIG_REG, 0b0101001);
-	i2cWriteByteData(I2C_Handle,ACQ_CONFIG_REG, 0b0101000);
-
+	//i2cWriteByteData(I2C_Handle,SIG_COUNT_VAL, 0b10000000);
+	//i2cWriteByteData(I2C_Handle,ACQ_CONFIG_REG, 0b0101000);
+	//i2cWriteByteData(I2C_Handle,THRESHOLD_BYPASS, 0b0);
 	
-	i2cWriteByteData(I2C_Handle,THRESHOLD_BYPASS, 0b0);
+	//High speed short range
+	i2cWriteByteData(I2C_Handle,SIG_COUNT_VAL, 0x1d);
+	i2cWriteByteData(I2C_Handle,ACQ_CONFIG_REG, 0x08);
+	i2cWriteByteData(I2C_Handle,THRESHOLD_BYPASS, 0x00);
+
 
 	gpioSleep(PI_TIME_RELATIVE, 0, LIDARSLEEPUS);
 	//500Hz

@@ -23,8 +23,8 @@
 
 
 //LIDAR range
-#define LIDAR_RANGE_MIN 1.5
-#define LIDAR_RANGE_MAX 35.0
+#define LIDAR_RANGE_MIN 0.4
+#define LIDAR_RANGE_MAX 10.0
 
 
 //LIDAR scale
@@ -43,7 +43,7 @@
 #define ACQ_COMMAND 0x00
 #define SIG_COUNT_VAL 0x02
 #define ACQ_CONFIG_REG 0x04
-#define THRESHOLD_BYPASS 0x00
+#define THRESHOLD_BYPASS 0x1c
 #define MEASURE_DELAY 0x45
 #define OUTER_LOOP_COUNT 0x11
 #define LIDAR_VALUE 0x8f
