@@ -72,7 +72,7 @@ int32_t main(int argc, char *argv[])
 		#endif
 		return EXIT_FAILURE;
 	}
-	setStepMode(&NEMA17,2);
+	setStepMode(&NEMA17,4);
 	dirDRV8825(&NEMA17, DRV8825_FORWARD);
 
 
